@@ -1,0 +1,164 @@
+import random
+import sys
+import matplotlib.pyplot as plt
+import numpy as np
+
+
+pontos = []
+
+arquivo = open('input.txt')
+for linha in arquivo:
+  aux = linha.split(" ")
+  pontos.append((int(aux[0]),int(aux[1])))
+
+TAM_POP = 800
+GERACOES = 500
+
+class cromossomo:
+    def __init__(self):
+        self.a = 0
+        self.b = 0
+        self.c = 0
+        self.d = 0
+        self.e = 0
+        self.distancia = 0
+    def __repr__(self):
+        return "Fitness: " + str(self.distancia) + "\n Pontos: " + "( a: " + str(self.a) + ', b: ' + str(self.b) + ', c: ' + str(self.c) + ', d: ' + str(self.d) + ', e: ' + str(self.e) + ' )'
+
+def fitness(cromossomo, pontos):
+  distancia = 0
+  for ponto in pontos:
+    x = ponto[0]
+    y = ponto[1]
+    distancia += abs(((cromossomo.a * x**4) + (cromossomo.b * x**3) + (cromossomo.c * x**2) + (cromossomo.d * x) + cromossomo.e) - y)
+  return distancia
+
+def PopInicial(pontos):
+  global TAM_POP
+  populacao = []
+
+  if TAM_POP % 2 != 0:
+    TAM_POP += 1
+
+  for i in range(TAM_POP):
+    individuo = cromossomo()
+    individuo.a =  random.uniform(-4.0,8.0)
+    individuo.b =  random.uniform(-4.0,8.0)
+    individuo.c =  random.uniform(-4.0,8.0)
+    individuo.d =  random.uniform(-4.0,8.0)
+    individuo.e =  random.uniform(-4.0,8.0)
+    individuo.distancia = fitness(individuo, pontos)
+    populacao.append(individuo)
+  populacao.sort(key=lambda individuo: individuo.distancia, reverse=False)
+
+  return populacao
+
+def crossover(cromoX, cromoY, pontos):
+
+  filho = cromossomo()
+  filho.distancia = 99999999999
+     
+  prob =  random.randint(0,100)
+  if prob < 80:
+    filho.a = cromoX.a
+  else:
+    filho.a = cromoY.a
+  prob = random.randint(0,100)
+  if prob < 80:
+    filho.b = cromoX.b
+  else:
+    filho.b = cromoY.b
+  prob =  random.randint(0,100)
+  if prob < 80:
+    filho.c = cromoX.c
+  else:
+    filho.c = cromoY.c
+  prob = random.randint(0,100)
+  if prob < 80:
+    filho.d = cromoX.d
+  else:
+    filho.d = cromoY.d
+  prob =  random.randint(0,100)
+  if prob < 80:
+    filho.e = cromoX.e
+  else:
+    filho.e = cromoY.e
+      
+  filho = mutacao(filho)
+  filho.distancia = fitness(filho, pontos)
+  
+  return filho
+
+
+def mutacao(filho):
+
+  random.seed(random.uniform(0, 10000))
+  filhoComMutacao = cromossomo()
+
+  filhoComMutacao.a = random.random()
+  filhoComMutacao.b = random.random()
+  filhoComMutacao.c = random.random()
+  filhoComMutacao.d = random.random()
+  filhoComMutacao.e = random.random()
+  filhoComMutacao.distancia = filho.distancia
+  
+  filhoComMutacao.a = filho.a * random.uniform(0.99, 1.01)
+  filhoComMutacao.b = filho.b *  random.uniform(0.99, 1.01)
+  filhoComMutacao.c = filho.c *  random.uniform(0.99, 1.01)
+  filhoComMutacao.d = filho.d *  random.uniform(0.99, 1.01)
+  filhoComMutacao.e = filho.e * random.uniform(0.99, 1.01)
+
+  return filhoComMutacao
+
+
+def graph(popAtual, pontos):
+  
+  x = np.arange(-5.0, 5.0, 0.02)
+  formula = ((popAtual[0].a * x**4) + (popAtual[0].b * x**3) + (popAtual[0].c * x**2) + (popAtual[0].d * x) + popAtual[0].e)
+  plt.plot(x, formula , 'r--')
+  plt.draw() 
+
+def Gerador(pontos):
+  global GERACOES
+
+  popAtual = PopInicial(pontos)
+
+  geracaoAtual = 0
+
+  xline = []
+  for ponto in pontos:
+    xline.append(ponto[0])
+
+  yline = []
+  for ponto in pontos:
+    yline.append(ponto[1])
+  plt.scatter(xline, yline)
+  plt.ylim(-4, 10)
+  plt.xlim(-4, 4)
+  
+
+  while(geracaoAtual < GERACOES):
+
+    filhos = []
+    for i in range(0,int(TAM_POP/2)-2):
+      posX = random.randint(0, int((len(popAtual)-1)/2))
+      posY = random.randint(int((len(popAtual)-1)/2), int((len(popAtual)-1)))
+
+      filho = crossover(popAtual[posX], popAtual[posY], pontos)
+      filhos.append(filho)
+
+    popAtual =  filhos + popAtual
+    popAtual.sort(key=lambda individuo: individuo.distancia, reverse=False)
+    
+    popAtual = popAtual[0:TAM_POP]
+    print("GERAÇÃO: ", geracaoAtual, "---------------------------------------------")
+    for individuo in range(1):
+      print(popAtual[individuo])
+    print("---------------------------------------------------------")
+   
+    if geracaoAtual % 50 == 0:
+      graph(popAtual,pontos)
+      plt.show()
+    geracaoAtual += 1
+
+print(Gerador(pontos))
